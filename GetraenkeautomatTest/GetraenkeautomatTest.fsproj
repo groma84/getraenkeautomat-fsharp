@@ -4,12 +4,12 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\getraenkeautomat\getraenkeautomat.fsproj">
-      <Name>getraenkeautomat.fsproj</Name>
+    <ProjectReference Include="..\Getraenkeautomat\Getraenkeautomat.fsproj">
+      <Name>Getraenkeautomat.fsproj</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Sample.fs" />
+    <Compile Include="AdministrationTest.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>

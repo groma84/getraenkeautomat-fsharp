@@ -2,5 +2,4 @@ source https://nuget.org/api/v2
 
 nuget FSharp.Core
 nuget FAKE
-nuget Expecto
 nuget FSharpx.Collections

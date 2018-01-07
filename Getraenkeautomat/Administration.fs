@@ -2,39 +2,48 @@ namespace Getraenkeautomat
 
 open Types
 open ErrorHandling
+open FSharpx.Collections
+open FSharpx.Collections
 
 module Administration =
     let sort faecher = 
-        faecher |> List.sortBy (fun fach -> fach.konfiguration.nummer) 
+        faecher
+        |> NonEmptyList.toList
+        |> List.sortBy (fun fach -> fach.konfiguration.nummer) 
+        |> NonEmptyList.ofList
 
     let initialeKonfiguration : InitialeKonfiguration =
         fun faecher muenzen ->
             {
                 faecher = faecher |> sort
-                geld = muenzen
+                muenzen = NonEmptyList.toList muenzen
             }
 
     let geldNachfuellen : GeldNachfuellen =
         fun getraenkeautomat muenzen ->
-            { getraenkeautomat with geld = getraenkeautomat.geld @ muenzen } 
+            { getraenkeautomat with muenzen = getraenkeautomat.muenzen @ (muenzen |> NonEmptyList.toList) } 
 
     let geldEntnehmen : GeldEntnehmen =
         fun getraenkeautomat ->
-            (getraenkeautomat.geld, { getraenkeautomat with geld = []})
+            (getraenkeautomat.muenzen, { getraenkeautomat with muenzen = []})
     
     let fachKonfigurationAendern : FachKonfigurationAendern =
         fun getraenkeautomat neueFachKonfiguration -> 
+            let filtereFaecher faecher = 
+                faecher
+                |> NonEmptyList.toList
+                |> List.filter (fun fach -> fach.konfiguration.nummer = neueFachKonfiguration.nummer) 
+
             let altesFach = 
-                getraenkeautomat.faecher |> List.filter (fun fach -> fach.konfiguration.nummer = neueFachKonfiguration.nummer) 
+                getraenkeautomat.faecher |> filtereFaecher
             
             match altesFach with 
-                
                 | [] -> fail FachExistiertGarNichtError
                 | fach::_ -> 
-                    let listeOhneAltesFach = getraenkeautomat.faecher |> List.except [fach]
+                    let listeOhneAltesFach = getraenkeautomat.faecher |> NonEmptyList.toList |> List.except [fach]
                     let geaendertesFach = { fach with konfiguration = neueFachKonfiguration }
                     ok  { getraenkeautomat with 
-                           faecher = geaendertesFach::listeOhneAltesFach |> sort
+                           faecher = geaendertesFach::listeOhneAltesFach |> NonEmptyList.ofList |> sort
                         }
 
 

@@ -23,7 +23,7 @@ module Types =
     // Typen
     type Anzahl = int
     type Groesse = int
-    type InCent = int
+    type Cent = int
     type Fachnummer = int
     type Muenze = 
         | EinCent
@@ -35,7 +35,7 @@ module Types =
         | EinEuro
         | ZweiEuro
 
-    type Preis = Preis of InCent
+    type Preis = Preis of Cent
 
     type Produkt = 
         | Cola
@@ -59,8 +59,8 @@ module Types =
     }
 
     type Getraenkeautomat = {
-        faecher: Fach list
-        geld: Muenze list
+        faecher: NonEmptyList<Fach>
+        muenzen: Muenze list
     }
 
     type EingeworfenesGeld = Muenze list
@@ -68,9 +68,9 @@ module Types =
 
     // Funktionen
     // Administration
-    type InitialeKonfiguration = Fach list -> Muenze list -> Getraenkeautomat
+    type InitialeKonfiguration = NonEmptyList<Fach> -> NonEmptyList<Muenze> -> Getraenkeautomat
 
-    type GeldNachfuellen = Getraenkeautomat -> Muenze list -> Getraenkeautomat
+    type GeldNachfuellen = Getraenkeautomat -> NonEmptyList<Muenze> -> Getraenkeautomat
     type GeldEntnehmen = Getraenkeautomat -> Muenze list * Getraenkeautomat
 
     type FachKonfigurationAendern = Getraenkeautomat -> FachKonfiguration -> Either<Getraenkeautomat, AdministrationError>

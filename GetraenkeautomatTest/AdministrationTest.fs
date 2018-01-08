@@ -2,6 +2,7 @@ module AdministrationTest
 
 open Expecto
 open FSharpx.Collections
+open Getraenkeautomat.ErrorHandling
 open Getraenkeautomat.Types
 open Getraenkeautomat.Administration
 
@@ -73,5 +74,46 @@ let tests =
           let actual = geldNachfuellen schonMuenzenDrin neueMuenzen
 
           Expect.equal actual.muenzen (muenzen @ muenzen) "Münzen"
+      ]
+
+      testList "geldEntnehmen" [
+        testCase "Leerer Automat -> kein Geld und weiterhin leerer Automat" <| fun _ ->
+          let keineMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+
+          let actualM, actualG = geldEntnehmen keineMuenzenDrin
+
+          Expect.equal actualM [] "Münzen"
+          Expect.equal actualG.muenzen [] "Münzen im Automat"
+
+        testCase "Automat mit Münzen drin hat danach keine Münzen mehr - denn die habe dann ich" <| fun _ ->
+          let muenzen = [muenze1; muenze2]
+          let schonMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = muenzen}
+
+          let actualM, actualG = geldEntnehmen schonMuenzenDrin
+          
+          Expect.equal actualM muenzen "Münzen"
+          Expect.equal actualG.muenzen [] "Münzen im Automat"
+      ]
+
+      testList "fachKonfigurationAendern" [
+        testCase "Fach existiert nicht" <| fun _ ->
+          let automat = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+          let neueFachKonfiguration = {fach1.konfiguration with nummer = 2}
+
+          let actual = fachKonfigurationAendern automat neueFachKonfiguration
+          
+          Expect.equal (fail FachExistiertGarNichtError) actual "Error erwartet"
+
+        testCase "Fachkonfiguration wird geändert" <| fun _ ->
+          let automat = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+          let neueFachKonfiguration = {fach1.konfiguration with nummer = 1; preis = 1337 |> Preis}
+
+          let actual = fachKonfigurationAendern automat neueFachKonfiguration
+          
+          match actual with
+            | Ok (changed, _) -> 
+                let fach = NonEmptyList.head changed.faecher 
+                Expect.equal fach {fach1 with konfiguration = neueFachKonfiguration} "Geänderte Fach-Konfiguration"
+            | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
       ]
   ]

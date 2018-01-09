@@ -3,19 +3,16 @@ namespace Getraenkeautomat
 open Types
 open ErrorHandling
 open FSharpx.Collections
-open FSharpx.Collections
 
 module Administration =
-    let sort faecher = 
-        faecher
-        |> NonEmptyList.toList
-        |> List.sortBy (fun fach -> fach.konfiguration.nummer) 
-        |> NonEmptyList.ofList
-
     let initialeKonfiguration : InitialeKonfiguration =
         fun faecher muenzen ->
+            let f =
+                faecher
+                |> NonEmptyList.toList
+                |> Map.ofList
             {
-                faecher = faecher |> sort
+                faecher = f
                 muenzen = NonEmptyList.toList muenzen
             }
 
@@ -29,24 +26,32 @@ module Administration =
     
     let fachKonfigurationAendern : FachKonfigurationAendern =
         fun getraenkeautomat neueFachKonfiguration -> 
-            let filtereFaecher faecher = 
-                faecher
-                |> NonEmptyList.toList
-                |> List.filter (fun fach -> fach.konfiguration.nummer = neueFachKonfiguration.nummer) 
+            let fachnummer, neuerPreis = neueFachKonfiguration
 
-            let altesFach = 
-                getraenkeautomat.faecher |> filtereFaecher
+            match Map.containsKey fachnummer getraenkeautomat.faecher with
+                | false -> fail FachExistiertGarNichtError
+                | true ->
+                    let altesFach = Map.find fachnummer getraenkeautomat.faecher
+                    let geaendertesFach = { altesFach with preis = neuerPreis }
+                    let changedFaecher = Map.updateWith (fun _ -> Some geaendertesFach) fachnummer getraenkeautomat.faecher
+                    ok  { getraenkeautomat with faecher = changedFaecher }
             
-            match altesFach with 
-                | [] -> fail FachExistiertGarNichtError
-                | fach::_ -> 
-                    let listeOhneAltesFach = getraenkeautomat.faecher |> NonEmptyList.toList |> List.except [fach]
-                    let geaendertesFach = { fach with konfiguration = neueFachKonfiguration }
-                    ok  { getraenkeautomat with 
-                           faecher = geaendertesFach::listeOhneAltesFach |> NonEmptyList.ofList |> sort
-                        }
+    let fachLeeren : FachLeeren =
+        fun getraenkeautomat fachnummer ->
+            match Map.containsKey fachnummer getraenkeautomat.faecher with
+                | false -> fail FachExistiertGarNichtError
+                | true ->
+                    let zuLeerendesFach = Map.find fachnummer getraenkeautomat.faecher
+                    match zuLeerendesFach.zustand with
+                    | Leer -> fail FachIstSchonLeerError
+                    | Gefuellt inhalt -> 
+                        let geleertesFach = { zuLeerendesFach with zustand = Leer } 
+                        let changedFaecher = Map.updateWith (fun _ -> Some geleertesFach) fachnummer getraenkeautomat.faecher
 
+                        ok (inhalt, { getraenkeautomat with faecher = changedFaecher })
 
+    let fachFuellen : FachFuellen =
+        failwith "TODO"
 (*
     type FachLeeren = Getraenkeautomat -> Fachnummer -> Either<Getraenkeautomat, AdministrationError>
     type FachFuellen = Getraenkeautomat -> Fachnummer -> Anzahl * Dose -> Either<Getraenkeautomat, AdministrationError>

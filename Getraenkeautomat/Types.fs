@@ -21,8 +21,6 @@ module Types =
         | BenutzungError
 
     // Typen
-    type Anzahl = int
-    type Groesse = int
     type Cent = int
     type Fachnummer = int
     type Muenze = 
@@ -48,18 +46,13 @@ module Types =
         | Leer
         | Gefuellt of NonEmptyList<Dose>
 
-    type FachKonfiguration = {
-        nummer: Fachnummer
-        preis: Preis
-    }
-
     type Fach = {
-        konfiguration: FachKonfiguration
+        preis: Preis
         zustand: FachZustand
     }
 
     type Getraenkeautomat = {
-        faecher: NonEmptyList<Fach>
+        faecher: Map<Fachnummer, Fach>
         muenzen: Muenze list
     }
 
@@ -68,14 +61,14 @@ module Types =
 
     // Funktionen
     // Administration
-    type InitialeKonfiguration = NonEmptyList<Fach> -> NonEmptyList<Muenze> -> Getraenkeautomat
+    type InitialeKonfiguration = NonEmptyList<Fachnummer * Fach> -> NonEmptyList<Muenze> -> Getraenkeautomat
 
     type GeldNachfuellen = Getraenkeautomat -> NonEmptyList<Muenze> -> Getraenkeautomat
     type GeldEntnehmen = Getraenkeautomat -> Muenze list * Getraenkeautomat
 
-    type FachKonfigurationAendern = Getraenkeautomat -> FachKonfiguration -> Either<Getraenkeautomat, AdministrationError>
-    type FachLeeren = Getraenkeautomat -> Fachnummer -> Either<Getraenkeautomat, AdministrationError>
-    type FachFuellen = Getraenkeautomat -> Fachnummer -> Anzahl * Dose -> Either<Getraenkeautomat, AdministrationError>
+    type FachKonfigurationAendern = Getraenkeautomat -> (Fachnummer * Preis) -> Either<Getraenkeautomat, AdministrationError>
+    type FachLeeren = Getraenkeautomat -> Fachnummer -> Either<NonEmptyList<Dose> * Getraenkeautomat, AdministrationError>
+    type FachFuellen = Getraenkeautomat -> Fachnummer -> NonEmptyList<Dose> -> Either<Getraenkeautomat, AdministrationError>
 
     // Benutzung
     type ProduktKaufen = Getraenkeautomat -> Fachnummer -> EingeworfenesGeld -> Either<Wechselgeld * Dose, EingeworfenesGeld * BenutzungError>

@@ -5,53 +5,53 @@ open FSharpx.Collections
 open Getraenkeautomat.ErrorHandling
 open Getraenkeautomat.Types
 open Getraenkeautomat.Administration
+open FSharpx.Collections
 
 [<Tests>]
 let tests = 
-  let fach1 = {
-    konfiguration = { nummer = 1; preis = Preis 100 }
+  let fach1Leer = {
+    preis = Preis 100
     zustand = Leer
   }
   let fach2 = {
-    konfiguration = { nummer = 2; preis = Preis 200 }
+    preis = Preis 200
     zustand = Leer
+  }
+  let fach3gefuellt = {
+    preis = Preis 100
+    zustand =  NonEmptyList.create (Dose Cola) [] |> Gefuellt 
   }
 
   let muenze1 = EinCent
   let muenze2 = ZweiCent
 
+  let compareListAndMap l m s =
+    let mapAsList = Map.toList m
+    let listAsList = NonEmptyList.toList l
+    Expect.equal mapAsList listAsList s
+
   testList "AdministrationTest" [
       testList "initialeKonfiguration" [
         testCase "Automat wird mit korrektem Fach initialisiert" <| fun _ ->
-          let faecher = [fach1] |> NonEmptyList.ofList
+          let faecher = [(1, fach1Leer)] |> NonEmptyList.ofList
           let muenzen = [muenze1] |> NonEmptyList.ofList
           
           let actual = initialeKonfiguration faecher muenzen
           
-          Expect.equal actual.faecher faecher "Fächer"
-        
+          compareListAndMap faecher actual.faecher "Fächer"
 
         testCase "Automat wird mit korrekter Münze initialisiert" <| fun _ ->
-          let faecher = [fach1] |> NonEmptyList.ofList
+          let faecher = [(1, fach1Leer)] |> NonEmptyList.ofList
           let muenzen = [muenze1] |> NonEmptyList.ofList
           
           let actual = initialeKonfiguration faecher muenzen
           
           Expect.equal actual.muenzen (muenzen |> NonEmptyList.toList) "Münzen"
-
-
-        testCase "Fächer werden korrekt sortiert" <| fun _ ->
-          let faecher = [fach2; fach1] |> NonEmptyList.ofList
-          let muenzen = [muenze1] |> NonEmptyList.ofList
-          
-          let actual = initialeKonfiguration faecher muenzen
-          
-          Expect.equal actual.faecher ([fach1; fach2] |> NonEmptyList.ofList) "sortierte Fächer"
       ]
 
       testList "geldNachfuellen" [
         testCase "Leerer Geldautomat hat danach Münze" <| fun _ ->
-          let keineMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+          let keineMuenzenDrin = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
           let neueMuenze = [muenze1] |> NonEmptyList.ofList
           
           let actual = geldNachfuellen keineMuenzenDrin neueMuenze
@@ -59,7 +59,7 @@ let tests =
           Expect.equal actual.muenzen (neueMuenze |> NonEmptyList.toList) "Münzen"
 
         testCase "Leerer Geldautomat hat danach mehrere Münzen" <| fun _ ->
-          let keineMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+          let keineMuenzenDrin = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
           let neueMuenzen = [muenze1; muenze2] |> NonEmptyList.ofList
           
           let actual = geldNachfuellen keineMuenzenDrin neueMuenzen
@@ -68,7 +68,7 @@ let tests =
         
         testCase "Automat mit Münzen drin hat danach noch mehr Münzen drin" <| fun _ ->
           let muenzen = [muenze1; muenze2]
-          let schonMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = muenzen}
+          let schonMuenzenDrin = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = muenzen}
           let neueMuenzen = muenzen |> NonEmptyList.ofList
           
           let actual = geldNachfuellen schonMuenzenDrin neueMuenzen
@@ -78,7 +78,7 @@ let tests =
 
       testList "geldEntnehmen" [
         testCase "Leerer Automat -> kein Geld und weiterhin leerer Automat" <| fun _ ->
-          let keineMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
+          let keineMuenzenDrin = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
 
           let actualM, actualG = geldEntnehmen keineMuenzenDrin
 
@@ -87,7 +87,7 @@ let tests =
 
         testCase "Automat mit Münzen drin hat danach keine Münzen mehr - denn die habe dann ich" <| fun _ ->
           let muenzen = [muenze1; muenze2]
-          let schonMuenzenDrin = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = muenzen}
+          let schonMuenzenDrin = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = muenzen}
 
           let actualM, actualG = geldEntnehmen schonMuenzenDrin
           
@@ -97,23 +97,53 @@ let tests =
 
       testList "fachKonfigurationAendern" [
         testCase "Fach existiert nicht" <| fun _ ->
-          let automat = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
-          let neueFachKonfiguration = {fach1.konfiguration with nummer = 2}
+          let automat = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
 
-          let actual = fachKonfigurationAendern automat neueFachKonfiguration
+          let actual = fachKonfigurationAendern automat (2, Preis 200)
           
           Expect.equal (fail FachExistiertGarNichtError) actual "Error erwartet"
 
         testCase "Fachkonfiguration wird geändert" <| fun _ ->
-          let automat = { faecher = [fach1] |> NonEmptyList.ofList; muenzen = []}
-          let neueFachKonfiguration = {fach1.konfiguration with nummer = 1; preis = 1337 |> Preis}
+          let automat = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
 
-          let actual = fachKonfigurationAendern automat neueFachKonfiguration
+          let actual = fachKonfigurationAendern automat (1, Preis 1337)
           
           match actual with
             | Ok (changed, _) -> 
-                let fach = NonEmptyList.head changed.faecher 
-                Expect.equal fach {fach1 with konfiguration = neueFachKonfiguration} "Geänderte Fach-Konfiguration"
+                let fach = Map.find 1 changed.faecher 
+                Expect.equal fach {fach1Leer with preis = Preis 1337} "Geänderte Fach-Konfiguration"
+            | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
+      ]
+
+      testList "fachLeeren" [
+        testCase "Leeres Fach kann nicht geleert werden" <| fun _ ->
+          let automat = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
+
+          let actual = fachLeeren automat 1
+
+          Expect.equal (fail FachIstSchonLeerError) actual "Error erwartet"
+
+        testCase "Gefülltes Fach ist danach leer" <| fun _ ->
+          let automat = { faecher = [(3, fach3gefuellt)] |> Map.ofList; muenzen = []}
+
+          let actual = fachLeeren automat 3
+          
+          match actual with
+            | Ok (changed, _) -> 
+              let _, automat = changed
+              let fach = Map.find 3 automat.faecher
+              Expect.equal fach.zustand Leer "Leeres Fach"
+            | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
+
+        testCase "Gefülltes Fach gibt Inhalt zurück" <| fun _ ->
+          let automat = { faecher = [(3, fach3gefuellt)] |> Map.ofList; muenzen = []}
+
+          let actual = fachLeeren automat 3
+          
+          match actual with
+            | Ok (changed, _) -> 
+              let inhalt, _ = changed
+              Expect.equal inhalt (NonEmptyList.create (Dose Cola) []) "Leeres Fach"
             | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
       ]
   ]

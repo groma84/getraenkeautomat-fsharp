@@ -7,14 +7,18 @@ open FSharpx.Collections
 module Administration =
     let initialeKonfiguration : InitialeKonfiguration =
         fun faecher muenzen ->
-            let f =
-                faecher
-                |> NonEmptyList.toList
-                |> Map.ofList
-            {
-                faecher = f
-                muenzen = NonEmptyList.toList muenzen
-            }
+            match (NonEmptyList.length faecher) = (faecher |> NonEmptyList.toList |> List.distinctBy fst |> List.length) with
+                | false -> fail DoppelteFachnummerError
+                | true -> 
+                    let f =
+                        faecher
+                        |> NonEmptyList.toList
+                        |> Map.ofList
+                    
+                    ok {
+                        faecher = f
+                        muenzen = NonEmptyList.toList muenzen
+                    }
 
     let geldNachfuellen : GeldNachfuellen =
         fun getraenkeautomat muenzen ->

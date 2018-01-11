@@ -5,7 +5,6 @@ open FSharpx.Collections
 open Getraenkeautomat.ErrorHandling
 open Getraenkeautomat.Types
 open Getraenkeautomat.Administration
-open FSharpx.Collections
 
 [<Tests>]
 let tests = 
@@ -13,11 +12,7 @@ let tests =
     preis = Preis 100
     zustand = Leer
   }
-  let fach2 = {
-    preis = Preis 200
-    zustand = Leer
-  }
-  let fach3gefuellt = {
+  let fach2gefuellt = {
     preis = Preis 100
     zustand =  NonEmptyList.create (Dose Cola) [] |> Gefuellt 
   }
@@ -38,7 +33,9 @@ let tests =
           
           let actual = initialeKonfiguration faecher muenzen
           
-          compareListAndMap faecher actual.faecher "Fächer"
+          
+
+          compareListAndMap faecher (returnOrFail actual).faecher "Fächer"
 
         testCase "Automat wird mit korrekter Münze initialisiert" <| fun _ ->
           let faecher = [(1, fach1Leer)] |> NonEmptyList.ofList
@@ -46,7 +43,15 @@ let tests =
           
           let actual = initialeKonfiguration faecher muenzen
           
-          Expect.equal actual.muenzen (muenzen |> NonEmptyList.toList) "Münzen"
+          Expect.equal (returnOrFail actual).muenzen (muenzen |> NonEmptyList.toList) "Münzen"
+
+        testCase "doppelte Fachnummer führt zu Error" <| fun _ ->
+          let faecher = [(1, fach1Leer); (1, fach1Leer)] |> NonEmptyList.ofList
+          let muenzen = [muenze1] |> NonEmptyList.ofList
+          
+          let actual = initialeKonfiguration faecher muenzen
+          
+          Expect.equal (fail DoppelteFachnummerError) actual "Error erwartet"
       ]
 
       testList "geldNachfuellen" [
@@ -124,7 +129,7 @@ let tests =
           Expect.equal (fail FachIstSchonLeerError) actual "Error erwartet"
 
         testCase "Gefülltes Fach ist danach leer" <| fun _ ->
-          let automat = { faecher = [(3, fach3gefuellt)] |> Map.ofList; muenzen = []}
+          let automat = { faecher = [(3, fach2gefuellt)] |> Map.ofList; muenzen = []}
 
           let actual = fachLeeren automat 3
           
@@ -136,7 +141,7 @@ let tests =
             | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
 
         testCase "Gefülltes Fach gibt Inhalt zurück" <| fun _ ->
-          let automat = { faecher = [(3, fach3gefuellt)] |> Map.ofList; muenzen = []}
+          let automat = { faecher = [(3, fach2gefuellt)] |> Map.ofList; muenzen = []}
 
           let actual = fachLeeren automat 3
           

@@ -7,6 +7,7 @@ module Types =
 
     // Moegliche Fehler
     type AdministrationError =
+        | DoppelteFachnummerError
         | FachIstSchonLeerError
         | UnterschiedlicheProdukteImGleichenFachError
         | FachExistiertGarNichtError
@@ -61,7 +62,7 @@ module Types =
 
     // Funktionen
     // Administration
-    type InitialeKonfiguration = NonEmptyList<Fachnummer * Fach> -> NonEmptyList<Muenze> -> Getraenkeautomat
+    type InitialeKonfiguration = NonEmptyList<Fachnummer * Fach> -> NonEmptyList<Muenze> -> Either<Getraenkeautomat, AdministrationError>
 
     type GeldNachfuellen = Getraenkeautomat -> NonEmptyList<Muenze> -> Getraenkeautomat
     type GeldEntnehmen = Getraenkeautomat -> Muenze list * Getraenkeautomat

@@ -3,6 +3,7 @@ namespace Getraenkeautomat
 open Types
 open ErrorHandling
 open FSharpx.Collections
+open FSharpx.Collections
 
 module Administration =
     let initialeKonfiguration : InitialeKonfiguration =
@@ -55,8 +56,29 @@ module Administration =
                         ok (inhalt, { getraenkeautomat with faecher = changedFaecher })
 
     let fachFuellen : FachFuellen =
-        failwith "TODO"
-(*
-    type FachLeeren = Getraenkeautomat -> Fachnummer -> Either<Getraenkeautomat, AdministrationError>
-    type FachFuellen = Getraenkeautomat -> Fachnummer -> Anzahl * Dose -> Either<Getraenkeautomat, AdministrationError>
-     *)
+        fun getraenkeautomat fachnummer neuerInhalt -> 
+            let fuelleFach zuFuellendesFach neuerInhalt =
+                let gefuelltesFach = { zuFuellendesFach with zustand = Gefuellt neuerInhalt }
+                let changedFaecher = Map.updateWith (fun _ -> Some gefuelltesFach) fachnummer getraenkeautomat.faecher
+                ok { getraenkeautomat with faecher = changedFaecher }
+            
+            let anzahlVerschiedeneProduktArten inhalt = 
+                inhalt |> NonEmptyList.toSeq |> Seq.distinct |> Seq.length
+
+            match Map.containsKey fachnummer getraenkeautomat.faecher with
+                | false -> fail FachExistiertGarNichtError
+                | true ->
+                    match anzahlVerschiedeneProduktArten neuerInhalt with
+                    | 1 ->
+                        let zuFuellendesFach = Map.find fachnummer getraenkeautomat.faecher
+                        match zuFuellendesFach.zustand with
+                        | Leer -> 
+                            fuelleFach zuFuellendesFach neuerInhalt
+                        | Gefuellt bisherigerInhalt ->
+                            let gesamterNeuerInhalt =  NonEmptyList.append bisherigerInhalt neuerInhalt
+                            match anzahlVerschiedeneProduktArten gesamterNeuerInhalt with
+                            | 1 ->
+                                fuelleFach zuFuellendesFach gesamterNeuerInhalt
+                            | _ -> fail UnterschiedlicheProdukteImGleichenFachError
+                    
+                    | _ -> fail UnterschiedlicheProdukteImGleichenFachError

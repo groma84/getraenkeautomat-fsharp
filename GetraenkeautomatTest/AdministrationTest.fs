@@ -5,6 +5,7 @@ open FSharpx.Collections
 open Getraenkeautomat.ErrorHandling
 open Getraenkeautomat.Types
 open Getraenkeautomat.Administration
+open FSharpx.Collections
 
 [<Tests>]
 let tests = 
@@ -12,7 +13,7 @@ let tests =
     preis = Preis 100
     zustand = Leer
   }
-  let fach2gefuellt = {
+  let fach2gefuelltMitCola = {
     preis = Preis 100
     zustand =  NonEmptyList.create (Dose Cola) [] |> Gefuellt 
   }
@@ -129,7 +130,7 @@ let tests =
           Expect.equal (fail FachIstSchonLeerError) actual "Error erwartet"
 
         testCase "Gefülltes Fach ist danach leer" <| fun _ ->
-          let automat = { faecher = [(3, fach2gefuellt)] |> Map.ofList; muenzen = []}
+          let automat = { faecher = [(3, fach2gefuelltMitCola)] |> Map.ofList; muenzen = []}
 
           let actual = fachLeeren automat 3
           
@@ -141,7 +142,7 @@ let tests =
             | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
 
         testCase "Gefülltes Fach gibt Inhalt zurück" <| fun _ ->
-          let automat = { faecher = [(3, fach2gefuellt)] |> Map.ofList; muenzen = []}
+          let automat = { faecher = [(3, fach2gefuelltMitCola)] |> Map.ofList; muenzen = []}
 
           let actual = fachLeeren automat 3
           
@@ -150,5 +151,66 @@ let tests =
               let inhalt, _ = changed
               Expect.equal inhalt (NonEmptyList.create (Dose Cola) []) "Leeres Fach"
             | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
+
+        testCase "Ein nicht existierendes Fach kann nicht geleert werden" <| fun _ ->
+          let automat = { faecher = [(3, fach2gefuelltMitCola)] |> Map.ofList; muenzen = []}
+          
+          let actual = fachLeeren automat 2
+          
+          Expect.equal (fail FachExistiertGarNichtError) actual "Error erwartet"
+          
+      ]
+
+      testList "fachFuellen" [
+        testCase "Leeres Fach kann gefüllt werden" <| fun _ ->
+          let fachnummer = 1
+          let automat = { faecher = [(fachnummer, fach1Leer)] |> Map.ofList; muenzen = []}
+          let coladose = Dose Cola
+          let neueDosen = NonEmptyList.create coladose []
+
+          // Automat -> Fachnummer -> NonEmptyList<Dose> -> Either<Getraenkeautomat, AdministrationError>
+          let actual  = fachFuellen automat 1 neueDosen
+
+          match actual with
+            | Ok (automat, _) -> 
+              let fach = Map.find fachnummer automat.faecher
+              Expect.equal fach.zustand (Gefuellt neueDosen) "Gefülltes Fach"
+            | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
+
+        testCase "Gefülltes Fach kann mit gleichem Produkt gefüllt werden" <| fun _ ->
+          let fachnummer = 1
+          let automat = { faecher = [(fachnummer, fach2gefuelltMitCola)] |> Map.ofList; muenzen = []}
+          let coladose = Dose Cola
+          let neueDosen = NonEmptyList.create coladose []
+          
+          let actual  = fachFuellen automat 1 neueDosen
+
+          match actual with
+            | Ok (automat, _) -> 
+              let (Gefuellt alteDosen) = fach2gefuelltMitCola.zustand
+              let alteUndNeueDose = NonEmptyList.append alteDosen neueDosen
+
+              let fach = Map.find fachnummer automat.faecher
+              Expect.equal fach.zustand (Gefuellt alteUndNeueDose) "Gefülltes Fach"
+            | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
+
+        testCase "Gefülltes Fach kann nicht mit anderem Produkt gefüllt werden" <| fun _ ->
+          let fachnummer = 1
+          let automat = { faecher = [(fachnummer, fach2gefuelltMitCola)] |> Map.ofList; muenzen = []}
+          let fantadose = Dose Fanta
+          let neueDosen = NonEmptyList.create fantadose []
+          
+          let actual  = fachFuellen automat 1 neueDosen
+
+          Expect.equal (fail UnterschiedlicheProdukteImGleichenFachError) actual "Error erwartet"
+
+        testCase "Ein nicht existierendes Fach kann nicht gefüllt werden" <| fun _ ->
+          let automat = { faecher = [(3, fach1Leer)] |> Map.ofList; muenzen = []}
+          let coladose = Dose Cola
+          let neueDosen = NonEmptyList.create coladose []
+
+          let actual = fachFuellen automat 2 neueDosen
+          
+          Expect.equal (fail FachExistiertGarNichtError) actual "Error erwartet"
       ]
   ]

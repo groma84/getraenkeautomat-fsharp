@@ -3,7 +3,6 @@ namespace Getraenkeautomat
 open Types
 open ErrorHandling
 open FSharpx.Collections
-open FSharpx.Collections
 
 module Administration =
     let initialeKonfiguration : InitialeKonfiguration =

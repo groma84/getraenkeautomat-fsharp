@@ -16,6 +16,7 @@ module Types =
         | NichtGenuegendWechselgeldError
         | FachExistiertNichtError
         | ZuWenigGeldEingeworfenError
+        | FachIstLeerError
 
     type Error = 
         | AdministrationError

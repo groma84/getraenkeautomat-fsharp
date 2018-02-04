@@ -5,7 +5,6 @@ open FSharpx.Collections
 open Getraenkeautomat.ErrorHandling
 open Getraenkeautomat.Types
 open Getraenkeautomat.Administration
-open FSharpx.Collections
 
 [<Tests>]
 let tests = 
@@ -33,8 +32,6 @@ let tests =
           let muenzen = [muenze1] |> NonEmptyList.ofList
           
           let actual = initialeKonfiguration faecher muenzen
-          
-          
 
           compareListAndMap faecher (returnOrFail actual).faecher "Fächer"
 

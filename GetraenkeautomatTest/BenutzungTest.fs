@@ -9,11 +9,11 @@ open Getraenkeautomat.Benutzung
 [<Tests>]
 let tests = 
     let fach1Leer = {
-        preis = Preis 100
+        preis = Preis <| Cent 100
         zustand = Leer
       }
     let fach2gefuelltMitCola = {
-        preis = Preis 100
+        preis = Preis <| Cent 100
         zustand =  NonEmptyList.create (Dose Cola) [] |> Gefuellt 
       }
 

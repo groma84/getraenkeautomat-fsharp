@@ -23,7 +23,7 @@ module Types =
         | BenutzungError
 
     // Typen
-    type Cent = int
+    type Cent = Cent of int
     type Fachnummer = int
     type Muenze = 
         | EinCent

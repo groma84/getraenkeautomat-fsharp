@@ -9,11 +9,11 @@ open Getraenkeautomat.Administration
 [<Tests>]
 let tests = 
   let fach1Leer = {
-    preis = Preis 100
+    preis = Preis <| Cent 100
     zustand = Leer
   }
   let fach2gefuelltMitCola = {
-    preis = Preis 100
+    preis = Preis <| Cent 100
     zustand =  NonEmptyList.create (Dose Cola) [] |> Gefuellt 
   }
 
@@ -102,19 +102,19 @@ let tests =
         testCase "Fach existiert nicht" <| fun _ ->
           let automat = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
 
-          let actual = fachKonfigurationAendern automat (2, Preis 200)
+          let actual = fachKonfigurationAendern automat (2, Preis <| Cent 200)
           
           Expect.equal (fail FachExistiertGarNichtError) actual "Error erwartet"
 
         testCase "Fachkonfiguration wird geändert" <| fun _ ->
           let automat = { faecher = [(1, fach1Leer)] |> Map.ofList; muenzen = []}
 
-          let actual = fachKonfigurationAendern automat (1, Preis 1337)
+          let actual = fachKonfigurationAendern automat (1, Preis <| Cent 1337)
           
           match actual with
             | Ok (changed, _) -> 
                 let fach = Map.find 1 changed.faecher 
-                Expect.equal fach {fach1Leer with preis = Preis 1337} "Geänderte Fach-Konfiguration"
+                Expect.equal fach {fach1Leer with preis = Preis <| Cent 1337} "Geänderte Fach-Konfiguration"
             | Bad _ -> Expect.isTrue false "Unerwartet im Error Case"
       ]
 

@@ -73,4 +73,17 @@ module Types =
     type FachFuellen = Getraenkeautomat -> Fachnummer -> NonEmptyList<Dose> -> Either<Getraenkeautomat, AdministrationError>
 
     // Benutzung
-    type ProduktKaufen = Getraenkeautomat -> Fachnummer -> EingeworfenesGeld -> Either<Wechselgeld * Dose, EingeworfenesGeld * BenutzungError>
+    type EinkaufsergebnisErfolgreich = {
+        getraenkeautomat: Getraenkeautomat
+        wechselgeld: Muenze list
+        gegenstand: Dose
+    }
+    type EinkaufsergebnisMisserfolg = {
+        eingeworfenesGeld: EingeworfenesGeld
+        fehler: BenutzungError
+    }
+    type Einkaufsergebnis = 
+        | Erfolg of EinkaufsergebnisErfolgreich 
+        | Fehler of EinkaufsergebnisMisserfolg
+        
+    type ProduktKaufen = Getraenkeautomat -> Fachnummer -> EingeworfenesGeld -> Einkaufsergebnis
